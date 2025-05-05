@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Cisco ISE APIクライアント</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        #result-content pre {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-6">
+    <h1 class="text-2xl font-semibold text-center text-blue-600 mb-8">Cisco ISE APIクライアント</h1>
+
+    <div id="env-info" class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">設定情報 (.env)</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <p class="text-gray-700">ISE IPアドレス: <span id="display-ise-ip" class="font-medium text-blue-600"></span></p>
+            </div>
+            <div>
+                <p class="text-gray-700">ISE ユーザー名: <span id="display-ise-username" class="font-medium text-blue-600"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="operations" class="bg-white rounded-lg shadow-md p-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-6">操作メニュー</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div id="auth-info">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">現在の認証情報</h3>
+                <input type="text" id="filter-sessions" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2" placeholder="セッションフィルター">
+                <button id="get-sessions-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">認証情報を取得</button>
+                <ul id="auth-info-list" class="list-disc list-inside text-gray-700"></ul>
+                <div id="session-count" class="mt-2 text-gray-700"></div>
+            </div>
+            <div id="endpoint-groups">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Endpoint Group一覧</h3>
+                <input type="text" id="filter-endpoint-groups" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2" placeholder="グループフィルター">
+                <button id="get-endpoint-groups-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">Endpoint Group一覧を取得</button>
+                <ul id="endpoint-group-list" class="list-disc list-inside text-gray-700"></ul>
+            </div>
+            <div id="endpoints-list">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Endpoint一覧</h3>
+                <input type="text" id="filter-endpoints" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2" placeholder="Endpointフィルター">
+                <button id="get-endpoints-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">Endpoint一覧を取得</button>
+                <ul id="endpoints-list-ul" class="list-disc list-inside text-gray-700"></ul>
+            </div>
+            <div>
+                <label for="delete-mac-address" class="block text-gray-700 text-sm font-bold mb-2">削除するMACアドレス:</label>
+                <input type="text" id="delete-mac-address" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2">
+                <button id="delete-endpoint-button" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">MACアドレスをEndpointGroupから削除</button>
+            </div>
+            <div>
+                <label for="add-mac-address" class="block text-gray-700 text-sm font-bold mb-2">追加するMACアドレス:</label>
+                <input type="text" id="add-mac-address" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2">
+                <label for="endpoint-group-id" class="block text-gray-700 text-sm font-bold mb-2">Endpoint Group ID:</label>
+                <input type="text" id="endpoint-group-id" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2">
+                <button id="add-endpoint-button" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">MACアドレスをEndpointGroupに追加</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="results" class="mt-8 bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">結果</h2>
+        <div id="result-content" class="text-gray-700"></div>
+    </div>
+
+    <script>
+        const displayIseIp = document.getElementById('display-ise-ip');
+        const displayIseUsername = document.getElementById('display-ise-username');
+        const authInfoList = document.getElementById('auth-info-list');
+        const endpointGroupList = document.getElementById('endpoint-group-list');
+        const deleteEndpointButton = document.getElementById('delete-endpoint-button');
+        const addEndpointButton = document.getElementById('add-endpoint-button');
+        const resultContent = document.getElementById('result-content');
+        const deleteMacAddressInput = document.getElementById('delete-mac-address');
+        const addMacAddressInput = document.getElementById('add-mac-address');
+        const endpointGroupIdInput = document.getElementById('endpoint-group-id');
+        const getSessionsButton = document.getElementById('get-sessions-button');
+        const getEndpointGroupsButton = document.getElementById('get-endpoint-groups-button');
+        const getEndpointsButton = document.getElementById('get-endpoints-button');
+        const endpointsListUl = document.getElementById('endpoints-list-ul');
+        const filterSessionsInput = document.getElementById('filter-sessions');
+        const filterEndpointGroupsInput = document.getElementById('filter-endpoint-groups');
+        const filterEndpointsInput = document.getElementById('filter-endpoints');
+        const sessionCountElement = document.getElementById('session-count');
+
+        // .envから読み込んだ情報を表示
+        fetch('/check_env')
+        .then(response => response.json())
+        .then(data => {
+            if (data.exists) {
+                displayIseIp.textContent = data.ise_ip;
+                displayIseUsername.textContent = data.ise_username;
+            } else {
+                displayIseIp.textContent = '設定されていません';
+                displayIseUsername.textContent = '設定されていません';
+                alert('.envファイルが存在しないか、ISE_IPまたはISE_USERNAMEが設定されていません。');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultContent.textContent = `設定情報の取得に失敗しました: ${error}`;
+        });
+
+        // 認証情報を表示する処理を関数に分離
+        function displaySessions() {
+            const filter = filterSessionsInput.value.toLowerCase();
+            fetch('/get_sessions')
+            .then(response => response.json()) // JSONとして取得
+            .then(data => {
+                if (data.error) {
+                    authInfoList.innerHTML = `<li>エラー: ${data.error}</li>`;
+                    resultContent.innerHTML = `<p class="text-red-500">エラー: ${data.error}</p>`;
+                    sessionCountElement.textContent = '';
+                } else {
+                    // auth-info-listの表示
+                    const filteredSessions = data.sessions.filter(session =>
+                        session.ip_address.toLowerCase().includes(filter) ||
+                        session.mac_address.toLowerCase().includes(filter) ||
+                        session.session_id.toLowerCase().includes(filter)
+                    );
+                    authInfoList.innerHTML = filteredSessions.map(session => `
+                        <li>
+                            IPアドレス: ${session.ip_address},
+                            MACアドレス: ${session.mac_address},
+                            セッションID: ${session.session_id}
+                        </li>
+                    `).join('');
+
+                    // 結果エリアの表示 (XMLを模したJSON)
+                    const resultJson = {
+                        noOfActiveSession: data.noOfActiveSession || 0, // エラーの場合も0を表示
+                        sessions: data.sessions || [] // エラーの場合も空の配列を表示
+                    };
+                    resultContent.innerHTML = `<pre>${JSON.stringify(resultJson, null, 2)}</pre>`;
+                    sessionCountElement.textContent = `Number of active sessions: ${resultJson.noOfActiveSession}`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultContent.textContent = `認証情報の取得に失敗しました: ${error}`;
+                sessionCountElement.textContent = '';
+                authInfoList.innerHTML = `<li>エラー: 認証情報の取得に失敗しました</li>`; // エラーメッセージを追加
+            });
+        }
+
+        // Endpoint Group一覧を表示する処理を関数に分離
+        function displayEndpointGroups() {
+            const filter = filterEndpointGroupsInput.value.toLowerCase();
+            fetch('/get_endpoint_groups')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    endpointGroupList.innerHTML = `<li>エラー: ${data.error}</li>`;
+                    resultContent.innerHTML = `<p class="text-red-500">エラー: ${data.error}</p>`;
+                } else {
+                    const filteredGroups = data.endpoint_groups.filter(group =>
+                        group.toLowerCase().includes(filter)
+                    );
+                    endpointGroupList.innerHTML = filteredGroups.map(group => `<li>${group}</li>`).join('');
+                    resultContent.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultContent.textContent = `Endpoint Group一覧の取得に失敗しました: ${error}`;
+            });
+        }
+
+        // エンドポイント一覧を表示する処理を関数に分離
+        function displayEndpoints() {
+            const filter = filterEndpointsInput.value.toLowerCase();
+            fetch('/get_endpoints')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    endpointsListUl.innerHTML = `<li>エラー: ${data.error}</li>`;
+                    resultContent.innerHTML = `<p class="text-red-500">エラー: ${data.error}</p>`;
+                } else {
+                    const filteredEndpoints = data.endpoints.filter(endpoint =>
+                        endpoint.mac.toLowerCase().includes(filter)
+                    );
+                    endpointsListUl.innerHTML = filteredEndpoints.map(endpoint => `
+                        <li>
+                            ID: ${endpoint.id},
+                            MACアドレス: ${endpoint.mac},
+                            グループID: ${endpoint.group_id}
+                        </li>
+                    `).join('');
+                    resultContent.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultContent.textContent = `Endpoint一覧の取得に失敗しました: ${error}`;
+            });
+        }
+
+        // ページ読み込み時に認証情報を表示
+        displaySessions();
+        // ページ読み込み時にEndpoint Group一覧を表示
+        displayEndpointGroups();
+        // ページ読み込み時にエンドポイント一覧を表示
+        displayEndpoints();
+
+        // ボタンクリックで認証情報を表示
+        getSessionsButton.addEventListener('click', displaySessions);
+        // フィルター入力時に認証情報を表示
+        filterSessionsInput.addEventListener('input', displaySessions);
+
+        // ボタンクリックでEndpoint Group一覧を表示
+        getEndpointGroupsButton.addEventListener('click', displayEndpointGroups);
+        // フィルター入力時にEndpoint Group一覧を表示
+        filterEndpointGroupsInput.addEventListener('input', displayEndpointGroups);
+
+        // ボタンクリックでエンドポイント一覧を表示
+        getEndpointsButton.addEventListener('click', displayEndpoints);
+        // フィルター入力時にエンドポイント一覧を表示
+        filterEndpointsInput.addEventListener('input', displayEndpoints);
+
+        deleteEndpointButton.addEventListener('click', () => {
+            const macAddress = deleteMacAddressInput.value;
+            if (!macAddress) {
+                alert('削除するMACアドレスを入力してください。');
+                return;
+            }
+            const endpointGroupId = prompt('Endpoint Group IDを入力してください:');
+            if (!endpointGroupId) {
+                alert('Endpoint Group IDが入力されませんでした。');
+                return;
+            }
+
+            resultContent.textContent = 'MACアドレスを削除中...';
+            fetch('/delete_endpoint', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ mac_address: macAddress, endpoint_group_id: endpointGroupId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                resultContent.textContent = data.message;
+                // 削除後にEndpoint一覧を再表示
+                displayEndpoints();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultContent.textContent = `エラー: ${error.message}`;
+            });
+        });
+
+        addEndpointButton.addEventListener('click', () => {
+            const macAddress = addMacAddressInput.value;
+            if (!macAddress) {
+                alert('追加するMACアドレスを入力してください。');
+                return;
+            }
+            const endpointGroupId = endpointGroupIdInput.value;
+            if (!endpointGroupId) {
+                alert('追加先のEndpoint Group IDを入力してください:');
+                return;
+            }
+            resultContent.textContent = 'MACアドレスを追加中...';
+            fetch('/add_endpoint', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ mac_address: macAddress, endpoint_group_id: endpointGroupId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                resultContent.textContent = data.message;
+                // 追加後にEndpoint一覧を再表示
+                displayEndpoints();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultContent.textContent = `エラー: ${error.message}`;
+            });
+        });
+    </script>
+</body>
+</html>
+
