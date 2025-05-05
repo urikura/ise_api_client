@@ -10,8 +10,8 @@ This repository is a client tool for interacting with the Cisco Identity Service
 * Retrieving current authentication information
 * Displaying a list of Endpoint Groups
 * Displaying a list of Endpoints
-* Adding MAC addresses to Endpoint Groups
-* Deleting MAC addresses from Endpoint Groups
+* Adding MAC addresses to Endpoint Groups (not tested)
+* Deleting MAC addresses from Endpoint Groups (not tested)
 
 **Disclaimer:**
 
