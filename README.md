@@ -59,8 +59,8 @@ This repository is a client tool for interacting with the Cisco Identity Service
     ```
     ISE_IP=your_ise_ip_address
     ISE_USERNAME=your_ise_username
-    ISE_PASSWORD=your_ise_password # 必要に応じて
-    HTTP_PROXY=http://your_proxy_address:port # プロキシサーバーを使用する場合
+    ISE_PASSWORD=your_ise_password 
+    HTTP_PROXY=http://your_proxy_address:port # optional
     ```
 
 ## 使い方
