@@ -94,11 +94,6 @@ This repository is a client tool for interacting with the Cisco Identity Service
 * Allows adding a specified MAC address to an Endpoint Group.
 * Allows deleting a specified MAC address from an Endpoint Group.
 
-## Additional Information
-
-* Modify the settings in `config.py` as needed.
-* Check `logs/error.log` for any errors.
-
 ## Disclaimer
 
 Use this tool at your own risk. The author is not responsible for any damages caused by the use of this tool.
