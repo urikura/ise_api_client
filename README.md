@@ -27,11 +27,12 @@ This repository is a client tool for interacting with the Cisco Identity Service
 
 ## Environment
 
-* Cisco ISE
+* Cisco ISE 3.1
+* ISE ERS and MNT API enabled 
 * Python 3.x
 * Required Python libraries (see requirements.txt)
 
-## インストール
+## Installation
 
 1.  Clone the repository:
 
@@ -63,7 +64,7 @@ This repository is a client tool for interacting with the Cisco Identity Service
     HTTP_PROXY=http://your_proxy_address:port # optional
     ```
 
-## 使い方
+## Usage
 
 1.  Run the application:
 
