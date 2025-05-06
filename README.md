@@ -8,6 +8,11 @@ This project implements a basic web client for Cisco ISE, allowing users to perf
 
 **This project was developed experimentally with the assistance of Google's Gemini 2.5 Flash.**
 
+
+## Sample GUI
+<img width="1772" alt="sample_image01" src="https://github.com/user-attachments/assets/4a368a3f-9bf1-4ff1-9f26-5952b7b2efb8" />
+
+
 ## Features
 
 * Displays Cisco ISE connection details (IP Address, Username) loaded from the `.env` file.
@@ -24,16 +29,15 @@ This project implements a basic web client for Cisco ISE, allowing users to perf
 ## Requirements
 
 * Python 3.6 or higher
-* Flask
-* Requests library (`pip install Flask requests python-dotenv`)
-* Access to a Cisco ISE instance with ERS API enabled.
-* An ISE user account with appropriate permissions including ERS admin and MNT admin.
+* Flask and required libraries
+* Access to a Cisco ISE instance with ERS API enabled
+* An ISE user account with appropriate permissions including ERS admin and MNT admin
 
 ## Setup
 
 1.  Clone this repository:
     ```bash
-    git clone <repository_url>
+    git clone https://github.com/urikura/ise_api_client
     cd ise_api_client
     ```
 2.  Create a Python virtual environment (recommended):
@@ -84,8 +88,15 @@ Once the application is running and you access the web interface:
 * Click the "Get Active Sessions" button to fetch and display currently active sessions by their MAC addresses.
 * Click the "Get Endpoint List" button to fetch and display all configured endpoints with their MAC address, Group ID, and Group Name. This process involves multiple API calls per endpoint on the backend and may take some time depending on the number of
 
-## Sample GUI
-<img width="1772" alt="sample_image01" src="https://github.com/user-attachments/assets/4a368a3f-9bf1-4ff1-9f26-5952b7b2efb8" />
+## Important Notes
+
+* **Experimental Project:** This project is experimental and primarily intended for learning and testing purposes.
+* **Production Use Caution:** Use in a production environment requires utmost caution. It has not undergone rigorous security testing or performance optimization for production workloads.
+* **Required ISE Permissions:** The ISE user account specified in the `.env` file requires significant permissions to interact with the APIs used by this application. Specifically, **ERS Admin (for Endpoint and Endpoint Group management via ERS) and MNT Admin (for Session monitoring via XML API) privileges are necessary.** Granting these permissions should be done with careful consideration of security implications.
+* **SSL Verification:** The application currently disables SSL certificate verification (`verify=False`) for simplicity, which is common in lab environments with self-signed certificates. **For production deployments, it is strongly recommended to configure proper certificate validation.**
+* **API Versions:** Cisco ISE ERS and XML API behavior and response structures can vary slightly between ISE versions. This application was developed based on typical ERS/XML API patterns. If you encounter unexpected errors (e.g., key errors, incorrect filtering), it might be due to API version differences.
+* **Rate Limiting:** Be mindful of potential API rate limits on your ISE appliance, especially when fetching large numbers of endpoints or performing frequent operations. Adding small delays (`time.sleep`) in the Python code might be necessary in environments with many endpoints.
+* **Security:** This is a basic example application. For production use, consider implementing more robust security measures, such as user authentication for the Flask application itself, more secure handling of credentials (e.g., using environment variables directly in the production environment rather than a file, using more secure storage methods), and stricter network access controls.
 
 
 
