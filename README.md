@@ -83,3 +83,9 @@ Once the application is running and you access the web interface:
 * The configured ISE IP and Username from your `.env` file will be displayed at the top.
 * Click the "Get Active Sessions" button to fetch and display currently active sessions by their MAC addresses.
 * Click the "Get Endpoint List" button to fetch and display all configured endpoints with their MAC address, Group ID, and Group Name. This process involves multiple API calls per endpoint on the backend and may take some time depending on the number of
+
+## Sample GUI
+<img width="1772" alt="sample_image01" src="https://github.com/user-attachments/assets/4a368a3f-9bf1-4ff1-9f26-5952b7b2efb8" />
+
+
+
