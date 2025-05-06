@@ -1,100 +1,85 @@
-# ise_api_client
-Client tool for interacting with Cisco ISE API with Web GUI
+# Cisco ISE API Client (Flask Web GUI)
 
-# Cisco ISE API Client
+A simple Flask web application providing a graphical user interface (GUI) to interact with Cisco Identity Services Engine (ISE) using its ERS and XML APIs.
 
 ## Overview
 
-This repository is a client tool for interacting with the Cisco Identity Services Engine (ISE) API.  It primarily provides the following functions:
+This project implements a basic web client for Cisco ISE, allowing users to perform common tasks such as viewing active sessions and endpoint information, as well as adding and deleting endpoints via a web browser. The application is built with Flask for the backend and a simple HTML/JavaScript frontend using Tailwind CSS for styling. It reads ISE connection details securely from a `.env` file.
 
-* Retrieving current authentication information
-* Displaying a list of Endpoint Groups
-* Displaying a list of Endpoints
-* Adding MAC addresses to Endpoint Groups (not tested)
-* Deleting MAC addresses from Endpoint Groups (not tested)
-
-**Disclaimer:**
-
-* This project was created as an experiment in collaboration with Gemini 2.0 flash.  It should be used with caution.
+**This project was developed experimentally with the assistance of Google's Gemini 2.5 Flash.**
 
 ## Features
 
-* Retrieves the current authentication information from the ISE server.
-* Displays a list of Endpoint Groups configured on the ISE server.
-* Displays a list of Endpoints registered with the ISE server.
-* Allows adding a MAC address to a specified Endpoint Group.
-* Allows deleting a MAC address from a specified Endpoint Group.
+* Displays Cisco ISE connection details (IP Address, Username) loaded from the `.env` file.
+* Fetches and displays a list of active sessions, showing their MAC addresses and the total count (uses ISE XML API).
+* Fetches and displays a comprehensive list of configured endpoints, including:
+    * MAC Address
+    * Assigned Endpoint Group ID
+    * Assigned Endpoint Group Name (involves chained ERS API calls)
+* Allows deleting an endpoint by its MAC address (searches for the endpoint ID internally by listing all, then calls the ERS DELETE API `/ers/config/endpoint/{endpointId}`).
+* Allows adding a new endpoint to a specific Endpoint Group by providing the MAC address and the target Endpoint Group ID (calls the ERS POST API `/ers/config/endpoint` with `ERSEndPoint` payload).
+* Basic filtering functionality for sessions and endpoints on the GUI.
+* Logging of API requests and responses on the backend.
 
-## Environment
+## Requirements
 
-* Cisco ISE 3.1
-* ISE ERS and MNT API enabled 
-* Python 3.x
-* Required Python libraries (see requirements.txt)
+* Python 3.6 or higher
+* Flask
+* Requests library (`pip install Flask requests python-dotenv`)
+* Access to a Cisco ISE instance with ERS API enabled.
+* An ISE user account with appropriate permissions including ERS admin and MNT admin.
 
-## Installation
+## Setup
 
-1.  Clone the repository:
-
+1.  Clone this repository:
     ```bash
-    git clone https://github.com/urikura/ise_api_client/
+    git clone <repository_url>
     cd ise_api_client
+    ```
+2.  Create a Python virtual environment (recommended):
+    ```bash
+    python -m venv .venv
+    ```
+3.  Activate the virtual environment:
+    * On macOS/Linux:
+        ```bash
+        source .venv/bin/activate
+        ```
+    * On Windows:
+        ```bash
+        .venv\Scripts\activate
+        ```
+4.  Install the required Python packages:
+    ```bash
     pip install -r requirements.txt
     ```
-2.  (option) Create a Python virtual environment and install the necessary libraries:
-
-    **Using uv:**
-
-    ```bash
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    source $HOME/.local/bin/env
-    cd ise_api_client
-    uv init
-    uv sync
-    . .venv/bin/activate
-    uv add -r requirements.txt
-    ```
-
-3.  Create a `.env` file and enter your ISE IP address, username, and password:
-
-    ```
+    (Make sure `requirements.txt` contains `Flask`, `requests`, `python-dotenv`). If not, run `pip freeze > requirements.txt` after manual installation.
+5.  Create a `.env` file in the root directory of the project with your Cisco ISE connection details:
+    ```env
     ISE_IP=your_ise_ip_address
-    ISE_USERNAME=your_ise_username
-    ISE_PASSWORD=your_ise_password 
-    HTTP_PROXY=http://your_proxy_address:port # optional
+    ISE_USERNAME=your_ise_api_username
+    ISE_PASSWORD=your_ise_api_password
+    # Optional: Configure a proxy if needed
+    # HTTP_PROXY=http://your_proxy_server:port
+    # HTTPS_PROXY=https://your_proxy_server:port # Requests library often uses HTTP_PROXY for both http/https if not specified separately
     ```
+    Replace `your_ise_ip_address`, `your_ise_api_username`, and `your_ise_api_password` with your actual ISE details.
+
+## How to Run
+
+1.  Activate your virtual environment (if not already active).
+2.  Run the Flask application:
+    ```bash
+    python ise_api_client.py
+    ```
+3.  Open your web browser and navigate to `http://127.0.0.1:5001/`.
+
+The application will run on port 5001 by default.
 
 ## Usage
 
-1.  Run the application:
+Once the application is running and you access the web interface:
 
-    ```bash
-    python3 ise_api_client.py
-    ```
-2.  Access the web interface in your browser at `http://localhost:5000`.
-
-## Functionality Details
-
-### Current Authentication Information
-
-* Displays the current authentication information for logged-in users on the ISE.
-* Provides filtering capabilities by IP address, MAC address, and session ID.
-
-### Endpoint Group List
-
-* Displays a list of Endpoint Groups configured on the ISE.
-* Allows filtering the list by group name.
-
-### Endpoint List
-
-* Displays a list of Endpoints registered on the ISE.
-* Allows filtering the list by MAC address.
-
-### Add/Delete MAC Address
-
-* Allows adding a specified MAC address to an Endpoint Group.
-* Allows deleting a specified MAC address from an Endpoint Group.
-
-## Disclaimer
-
-Use this tool at your own risk. The author is not responsible for any damages caused by the use of this tool.
+* The configured ISE IP and Username from your `.env` file will be displayed at the top.
+* Click the "Get Active Sessions" button to fetch and display currently active sessions by their MAC addresses.
+* Click the "Get Endpoint List" button to fetch and display all configured endpoints with their MAC address, Group ID, and Group Name. This process involves multiple API calls per endpoint on the backend and may take some time depending on the number of
