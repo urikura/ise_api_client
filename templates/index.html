@@ -18,6 +18,9 @@
             word-wrap: break-word;
             margin-bottom: 1rem;
         }
+        .error {
+            color: red;
+        }
     </style>
 </head>
 <body class="bg-gray-100 p-6">
@@ -33,267 +36,327 @@
                 <p class="text-gray-700">ISE ユーザー名: <span id="display-ise-username" class="font-medium text-blue-600"></span></p>
             </div>
         </div>
+        <div id="env-status" class="mt-4 text-sm font-medium"></div>
     </div>
 
     <div id="operations" class="bg-white rounded-lg shadow-md p-8">
         <h2 class="text-xl font-semibold text-gray-800 mb-6">操作メニュー</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div id="auth-info">
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">現在の認証情報</h3>
-                <input type="text" id="filter-sessions" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2" placeholder="セッションフィルター">
-                <button id="get-sessions-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">認証情報を取得</button>
-                <ul id="auth-info-list" class="list-disc list-inside text-gray-700"></ul>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+
+            <div id="sessions-info">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">現在の認証情報 (Active Session)</h3>
+                 <input type="text" id="filter-sessions" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2" placeholder="MACアドレスでフィルター">
+                <button id="get-sessions-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">Active Sessionを取得</button>
                 <div id="session-count" class="mt-2 text-gray-700"></div>
+                <ul id="session-mac-list" class="list-disc list-inside text-gray-700"></ul>
             </div>
-            <div id="endpoint-groups">
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">Endpoint Group一覧</h3>
-                <input type="text" id="filter-endpoint-groups" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2" placeholder="グループフィルター">
-                <button id="get-endpoint-groups-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">Endpoint Group一覧を取得</button>
-                <ul id="endpoint-group-list" class="list-disc list-inside text-gray-700"></ul>
-            </div>
+
             <div id="endpoints-list">
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">Endpoint一覧</h3>
-                <input type="text" id="filter-endpoints" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2" placeholder="Endpointフィルター">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Endpoint一覧 (MAC, Group ID, Group Name)</h3>
+                 <input type="text" id="filter-endpoints" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2" placeholder="MAC, Group ID, Group Nameでフィルター">
                 <button id="get-endpoints-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">Endpoint一覧を取得</button>
-                <ul id="endpoints-list-ul" class="list-disc list-inside text-gray-700"></ul>
+                <ul id="endpoints-details-list" class="list-disc list-inside text-gray-700"></ul>
             </div>
+
             <div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">MACアドレスを削除</h3>
                 <label for="delete-mac-address" class="block text-gray-700 text-sm font-bold mb-2">削除するMACアドレス:</label>
-                <input type="text" id="delete-mac-address" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2">
-                <button id="delete-endpoint-button" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">MACアドレスをEndpointGroupから削除</button>
+                <input type="text" id="delete-mac-address" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2" placeholder="例: AA:BB:CC:DD:EE:FF">
+                <button id="delete-endpoint-button" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">削除実行</button>
             </div>
+
             <div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">MACアドレスをEndpointGroupに追加</h3>
                 <label for="add-mac-address" class="block text-gray-700 text-sm font-bold mb-2">追加するMACアドレス:</label>
-                <input type="text" id="add-mac-address" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2">
-                <label for="endpoint-group-id" class="block text-gray-700 text-sm font-bold mb-2">Endpoint Group ID:</label>
-                <input type="text" id="endpoint-group-id" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2">
-                <button id="add-endpoint-button" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">MACアドレスをEndpointGroupに追加</button>
+                <input type="text" id="add-mac-address" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2" placeholder="例: AA:BB:CC:DD:EE:FF">
+                <label for="add-endpoint-group-id" class="block text-gray-700 text-sm font-bold mb-2">追加先のEndpoint Group ID:</label>
+                <input type="text" id="add-endpoint-group-id" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2" placeholder="例: abcd1234-...">
+                <button id="add-endpoint-button" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">追加実行</button>
             </div>
         </div>
     </div>
 
     <div id="results" class="mt-8 bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">結果</h2>
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">結果/メッセージ</h2>
         <div id="result-content" class="text-gray-700"></div>
     </div>
 
     <script>
         const displayIseIp = document.getElementById('display-ise-ip');
         const displayIseUsername = document.getElementById('display-ise-username');
-        const authInfoList = document.getElementById('auth-info-list');
-        const endpointGroupList = document.getElementById('endpoint-group-list');
+        const envStatusElement = document.getElementById('env-status');
+        const sessionMacList = document.getElementById('session-mac-list'); // セッションのMACアドレスリスト表示用
+        const endpointsDetailsListUl = document.getElementById('endpoints-details-list'); // Endpoint詳細リスト表示用
         const deleteEndpointButton = document.getElementById('delete-endpoint-button');
         const addEndpointButton = document.getElementById('add-endpoint-button');
         const resultContent = document.getElementById('result-content');
         const deleteMacAddressInput = document.getElementById('delete-mac-address');
         const addMacAddressInput = document.getElementById('add-mac-address');
-        const endpointGroupIdInput = document.getElementById('endpoint-group-id');
+        const addEndpointGroupIdInput = document.getElementById('add-endpoint-group-id');
         const getSessionsButton = document.getElementById('get-sessions-button');
-        const getEndpointGroupsButton = document.getElementById('get-endpoint-groups-button');
         const getEndpointsButton = document.getElementById('get-endpoints-button');
-        const endpointsListUl = document.getElementById('endpoints-list-ul');
         const filterSessionsInput = document.getElementById('filter-sessions');
-        const filterEndpointGroupsInput = document.getElementById('filter-endpoint-groups');
         const filterEndpointsInput = document.getElementById('filter-endpoints');
         const sessionCountElement = document.getElementById('session-count');
 
-        // .envから読み込んだ情報を表示
+
+        // =====================================================
+        // .envからの設定情報を表示
+        // =====================================================
         fetch('/check_env')
         .then(response => response.json())
         .then(data => {
             if (data.exists) {
                 displayIseIp.textContent = data.ise_ip;
                 displayIseUsername.textContent = data.ise_username;
+                envStatusElement.textContent = '.envファイルから設定が読み込まれています。';
+                envStatusElement.className = 'mt-4 text-sm font-medium text-green-600'; // 成功時のスタイル
             } else {
-                displayIseIp.textContent = '設定されていません';
-                displayIseUsername.textContent = '設定されていません';
-                alert('.envファイルが存在しないか、ISE_IPまたはISE_USERNAMEが設定されていません。');
+                displayIseIp.textContent = data.ise_ip; // デフォルト値が表示される想定
+                displayIseUsername.textContent = data.ise_username; // デフォルト値が表示される想定
+                envStatusElement.textContent = '.envファイルが存在しないか、必要な設定が不足しています。';
+                 envStatusElement.className = 'mt-4 text-sm font-medium text-red-600'; // 失敗時のスタイル
+                alert('.envファイルが存在しないか、ISE_IPまたはISE_USERNAMEが設定されていません。アプリケーションが正しく動作しない可能性があります。');
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            resultContent.textContent = `設定情報の取得に失敗しました: ${error}`;
+            console.error('Error fetching env info:', error);
+            envStatusElement.textContent = `設定情報の取得中にエラーが発生しました: ${error}`;
+             envStatusElement.className = 'mt-4 text-sm font-medium text-red-600'; // エラー時のスタイル
+            resultContent.innerHTML = `<p class="error">設定情報の取得に失敗しました: ${error}</p>`;
         });
 
-        // 認証情報を表示する処理を関数に分離
+
+        // =====================================================
+        // Active Session一覧を表示する処理
+        // =====================================================
         function displaySessions() {
+            resultContent.textContent = 'Active Session情報を取得中...';
+            sessionMacList.innerHTML = ''; // リストをクリア
+            sessionCountElement.textContent = ''; // セッション数表示をクリア
             const filter = filterSessionsInput.value.toLowerCase();
+
             fetch('/get_sessions')
-            .then(response => response.json()) // JSONとして取得
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.error || `HTTP error! status: ${response.status}`); });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.error) {
-                    authInfoList.innerHTML = `<li>エラー: ${data.error}</li>`;
-                    resultContent.innerHTML = `<p class="text-red-500">エラー: ${data.error}</p>`;
-                    sessionCountElement.textContent = '';
+                    sessionMacList.innerHTML = `<li>エラー: ${data.error}</li>`;
+                    resultContent.innerHTML = `<p class="error">エラー: ${data.error}</p>`;
+                     sessionCountElement.textContent = '';
                 } else {
-                    // auth-info-listの表示
-                    const filteredSessions = data.sessions.filter(session =>
-                        session.ip_address.toLowerCase().includes(filter) ||
-                        session.mac_address.toLowerCase().includes(filter) ||
-                        session.session_id.toLowerCase().includes(filter)
+                    resultContent.textContent = 'Active Session情報取得完了。';
+                    const filteredMacs = data.mac_addresses.filter(mac =>
+                        mac.toLowerCase().includes(filter)
                     );
-                    authInfoList.innerHTML = filteredSessions.map(session => `
-                        <li>
-                            IPアドレス: ${session.ip_address},
-                            MACアドレス: ${session.mac_address},
-                            セッションID: ${session.session_id}
-                        </li>
-                    `).join('');
+                    sessionMacList.innerHTML = filteredMacs.map(mac => `<li>${mac}</li>`).join('');
+                     sessionCountElement.textContent = `Active Session数: ${data.noOfActiveSession}`;
 
-                    // 結果エリアの表示 (XMLを模したJSON)
-                    const resultJson = {
-                        noOfActiveSession: data.noOfActiveSession || 0, // エラーの場合も0を表示
-                        sessions: data.sessions || [] // エラーの場合も空の配列を表示
-                    };
-                    resultContent.innerHTML = `<pre>${JSON.stringify(resultJson, null, 2)}</pre>`;
-                    sessionCountElement.textContent = `Number of active sessions: ${resultJson.noOfActiveSession}`;
+                    if (filteredMacs.length === 0 && data.mac_addresses.length > 0) {
+                         sessionMacList.innerHTML = '<li>フィルター条件に一致するセッションはありません。</li>';
+                    } else if (data.mac_addresses.length === 0) {
+                         sessionMacList.innerHTML = '<li>Active Sessionはありません。</li>';
+                    }
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                resultContent.textContent = `認証情報の取得に失敗しました: ${error}`;
-                sessionCountElement.textContent = '';
-                authInfoList.innerHTML = `<li>エラー: 認証情報の取得に失敗しました</li>`; // エラーメッセージを追加
+                console.error('Error fetching sessions:', error);
+                resultContent.innerHTML = `<p class="error">Active Session情報の取得に失敗しました: ${error.message || error}</p>`;
+                sessionMacList.innerHTML = `<li>エラー: Active Session情報の取得に失敗しました</li>`;
+                 sessionCountElement.textContent = '';
             });
         }
 
-        // Endpoint Group一覧を表示する処理を関数に分離
-        function displayEndpointGroups() {
-            const filter = filterEndpointGroupsInput.value.toLowerCase();
-            fetch('/get_endpoint_groups')
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    endpointGroupList.innerHTML = `<li>エラー: ${data.error}</li>`;
-                    resultContent.innerHTML = `<p class="text-red-500">エラー: ${data.error}</p>`;
-                } else {
-                    const filteredGroups = data.endpoint_groups.filter(group =>
-                        group.toLowerCase().includes(filter)
-                    );
-                    endpointGroupList.innerHTML = filteredGroups.map(group => `<li>${group}</li>`).join('');
-                    resultContent.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                resultContent.textContent = `Endpoint Group一覧の取得に失敗しました: ${error}`;
-            });
-        }
-
-        // エンドポイント一覧を表示する処理を関数に分離
+        // =====================================================
+        // Endpoint一覧 (MAC, Group ID, Group Name) を表示する処理
+        // =====================================================
         function displayEndpoints() {
+            resultContent.textContent = 'Endpoint一覧を取得中...';
+            endpointsDetailsListUl.innerHTML = ''; // リストをクリア
             const filter = filterEndpointsInput.value.toLowerCase();
+
             fetch('/get_endpoints')
-            .then(response => response.json())
+            .then(response => {
+                 if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.error || `HTTP error! status: ${response.status}`); });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.error) {
-                    endpointsListUl.innerHTML = `<li>エラー: ${data.error}</li>`;
-                    resultContent.innerHTML = `<p class="text-red-500">エラー: ${data.error}</p>`;
+                    endpointsDetailsListUl.innerHTML = `<li>エラー: ${data.error}</li>`;
+                    resultContent.innerHTML = `<p class="error">エラー: ${data.error}</p>`;
                 } else {
-                    const filteredEndpoints = data.endpoints.filter(endpoint =>
-                        endpoint.mac.toLowerCase().includes(filter)
+                    resultContent.textContent = 'Endpoint一覧取得完了。';
+                     const filteredEndpoints = data.endpoints.filter(endpoint =>
+                        endpoint.mac.toLowerCase().includes(filter) ||
+                        endpoint.group_id.toLowerCase().includes(filter) ||
+                        endpoint.group_name.toLowerCase().includes(filter)
                     );
-                    endpointsListUl.innerHTML = filteredEndpoints.map(endpoint => `
+                    endpointsDetailsListUl.innerHTML = filteredEndpoints.map(endpoint => `
                         <li>
-                            ID: ${endpoint.id},
-                            MACアドレス: ${endpoint.mac},
-                            グループID: ${endpoint.group_id}
+                            MAC: ${endpoint.mac},
+                            Group ID: ${endpoint.group_id},
+                            Group Name: ${endpoint.group_name}
                         </li>
                     `).join('');
-                    resultContent.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+
+                    if (filteredEndpoints.length === 0 && data.endpoints.length > 0) {
+                         endpointsDetailsListUl.innerHTML = '<li>フィルター条件に一致するEndpointはありません。</li>';
+                    } else if (data.endpoints.length === 0) {
+                         endpointsDetailsListUl.innerHTML = '<li>登録されているEndpointはありません。</li>';
+                    }
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                resultContent.textContent = `Endpoint一覧の取得に失敗しました: ${error}`;
+                console.error('Error fetching endpoints:', error);
+                resultContent.innerHTML = `<p class="error">Endpoint一覧の取得に失敗しました: ${error.message || error}</p>`;
+                endpointsDetailsListUl.innerHTML = `<li>エラー: Endpoint一覧の取得に失敗しました</li>`;
             });
         }
 
-        // ページ読み込み時に認証情報を表示
-        displaySessions();
-        // ページ読み込み時にEndpoint Group一覧を表示
-        displayEndpointGroups();
-        // ページ読み込み時にエンドポイント一覧を表示
-        displayEndpoints();
 
-        // ボタンクリックで認証情報を表示
-        getSessionsButton.addEventListener('click', displaySessions);
-        // フィルター入力時に認証情報を表示
-        filterSessionsInput.addEventListener('input', displaySessions);
-
-        // ボタンクリックでEndpoint Group一覧を表示
-        getEndpointGroupsButton.addEventListener('click', displayEndpointGroups);
-        // フィルター入力時にEndpoint Group一覧を表示
-        filterEndpointGroupsInput.addEventListener('input', displayEndpointGroups);
-
-        // ボタンクリックでエンドポイント一覧を表示
-        getEndpointsButton.addEventListener('click', displayEndpoints);
-        // フィルター入力時にエンドポイント一覧を表示
-        filterEndpointsInput.addEventListener('input', displayEndpoints);
-
+        // =====================================================
+        // Endpoint削除処理
+        // =====================================================
         deleteEndpointButton.addEventListener('click', () => {
-            const macAddress = deleteMacAddressInput.value;
+            // MACアドレス入力欄の値を取得
+            const macAddress = deleteMacAddressInput.value.trim();
+
+
             if (!macAddress) {
                 alert('削除するMACアドレスを入力してください。');
                 return;
             }
-            const endpointGroupId = prompt('Endpoint Group IDを入力してください:');
-            if (!endpointGroupId) {
-                alert('Endpoint Group IDが入力されませんでした。');
+             // 削除APIではGroup IDは不要になったため、チェックも削除
+             /*
+             if (!endpointGroupId) {
+                alert('削除対象のEndpoint Group IDを入力してください。');
                 return;
             }
+            */
 
-            resultContent.textContent = 'MACアドレスを削除中...';
+            resultContent.textContent = `MACアドレス ${macAddress} を削除中...`;
+            resultContent.className = 'text-gray-700'; // メッセージ表示時のスタイル
+
+
             fetch('/delete_endpoint', {
-                method: 'POST',
+                method: 'POST', // Flask側はPOSTで受け取る
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ mac_address: macAddress, endpoint_group_id: endpointGroupId })
+                // 削除APIではGroup IDは不要になったため、MACアドレスのみを送信
+                body: JSON.stringify({ mac_address: macAddress /* , endpoint_group_id: endpointGroupId */ })
             })
-            .then(response => response.json())
+            .then(response => {
+                 if (!response.ok) {
+                    // エラーレスポンスの場合、JSONとしてパースしてエラーメッセージを取得
+                    // Response BodyがHTMLの場合も考慮し、try-catchでJSONパースエラーを捕捉
+                    return response.json().catch(() => {
+                         // JSONパースに失敗した場合、レスポンスボディ全体をエラーメッセージとする
+                         return response.text().then(text => { throw new Error(`HTTP error! status: ${response.status}, Body: ${text}`); });
+                    }).then(err => {
+                         // JSONとしてパースできた場合は、エラーメッセージを取得
+                        throw new Error(err.error || `HTTP error! status: ${response.status}`);
+                    });
+                 }
+                 // 成功レスポンスの場合、JSONとしてパース (多くの場合ボディは空かシンプル)
+                return response.json().catch(() => ({ message: `操作成功 (ステータス: ${response.status})` })); // JSONボディがない場合も考慮
+            })
             .then(data => {
                 resultContent.textContent = data.message;
-                // 削除後にEndpoint一覧を再表示
+                resultContent.className = 'text-green-600'; // 成功時のスタイル
+                // 削除後にEndpoint一覧を再表示して画面を更新
                 displayEndpoints();
             })
             .catch(error => {
-                console.error('Error:', error);
-                resultContent.textContent = `エラー: ${error.message}`;
+                console.error('Error deleting endpoint:', error);
+                resultContent.innerHTML = `<p class="error">削除エラー: ${error.message || error}</p>`;
+                 resultContent.className = 'text-red-600'; // エラー時のスタイル
             });
         });
 
+        // =====================================================
+        // Endpoint追加処理
+        // =====================================================
         addEndpointButton.addEventListener('click', () => {
-            const macAddress = addMacAddressInput.value;
+            const macAddress = addMacAddressInput.value.trim();
+            const endpointGroupId = addEndpointGroupIdInput.value.trim();
+
             if (!macAddress) {
                 alert('追加するMACアドレスを入力してください。');
                 return;
             }
-            const endpointGroupId = endpointGroupIdInput.value;
             if (!endpointGroupId) {
                 alert('追加先のEndpoint Group IDを入力してください:');
                 return;
             }
-            resultContent.textContent = 'MACアドレスを追加中...';
+
+            resultContent.textContent = `MACアドレス ${macAddress} を追加中...`;
+             resultContent.className = 'text-gray-700'; // メッセージ表示時のスタイル
+
+
             fetch('/add_endpoint', {
-                method: 'POST',
+                method: 'POST', // Flask側はPOSTで受け取る
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ mac_address: macAddress, endpoint_group_id: endpointGroupId })
             })
-            .then(response => response.json())
+            .then(response => {
+                 if (!response.ok) {
+                    // エラーレスポンスの場合、JSONとしてパースしてエラーメッセージを取得
+                     // Response BodyがHTMLの場合も考慮し、try-catchでJSONパースエラーを捕捉
+                    return response.json().catch(() => {
+                         // JSONパースに失敗した場合、レスポンスボディ全体をエラーメッセージとする
+                         return response.text().then(text => { throw new Error(`HTTP error! status: ${response.status}, Body: ${text}`); });
+                    }).then(err => {
+                         // JSONとしてパースできた場合は、エラーメッセージを取得
+                        throw new Error(err.error || `HTTP error! status: ${response.status}`);
+                    });
+                 }
+                 // 成功レスポンスの場合、JSONとしてパース (多くの場合ボディは空かシンプル)
+                 return response.json().catch(() => ({ message: `操作成功 (ステータス: ${response.status})` })); // JSONボディがない場合も考慮
+            })
             .then(data => {
                 resultContent.textContent = data.message;
-                // 追加後にEndpoint一覧を再表示
+                 resultContent.className = 'text-green-600'; // 成功時のスタイル
+                 // 追加後にEndpoint一覧を再表示して画面を更新
                 displayEndpoints();
             })
             .catch(error => {
-                console.error('Error:', error);
-                resultContent.textContent = `エラー: ${error.message}`;
+                console.error('Error adding endpoint:', error);
+                resultContent.innerHTML = `<p class="error">追加エラー: ${error.message || error}</p>`;
+                 resultContent.className = 'text-red-600'; // エラー時のスタイル
             });
         });
+
+
+        // =====================================================
+        // ページ読み込み時の初期表示とイベントリスナー設定
+        // =====================================================
+
+        // ページ読み込み時にEndpoint一覧を表示
+        displayEndpoints();
+         // ページ読み込み時にActive Session一覧を表示
+        displaySessions();
+
+
+        // ボタンクリックでActive Session一覧を表示
+        getSessionsButton.addEventListener('click', displaySessions);
+        // フィルター入力時にActive Session一覧を再表示
+        filterSessionsInput.addEventListener('input', displaySessions);
+
+        // ボタンクリックでEndpoint一覧を表示
+        getEndpointsButton.addEventListener('click', displayEndpoints);
+        // フィルター入力時にEndpoint一覧を再表示
+        filterEndpointsInput.addEventListener('input', displayEndpoints);
+
+
     </script>
 </body>
 </html>
-
