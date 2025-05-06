@@ -10,7 +10,7 @@ This project implements a basic web client for Cisco ISE, allowing users to perf
 
 
 ## Sample GUI
-<img width="1772" alt="sample_image01" src="https://github.com/user-attachments/assets/4a368a3f-9bf1-4ff1-9f26-5952b7b2efb8" />
+<img width="1282" alt="image" src="https://github.com/user-attachments/assets/002d2ff5-01c7-4aa7-806c-2ff65a662f43" />
 
 
 ## Features
