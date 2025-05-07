@@ -9,17 +9,28 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        /* 結果表示エリアの <pre> タグのスタイル */
         #result-content pre {
             background-color: #f0f0f0;
             padding: 10px;
             border: 1px solid #ccc;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+            overflow-x: auto; /* 横スクロールは残しておく（念のため） */
+            white-space: pre-wrap; /* ここで折り返しを指定 */
+            word-wrap: break-word; /* 長い単語でも折り返す */
             margin-bottom: 1rem;
+        }
+         /* Style specifically for displaying XML/code - 念のため維持 */
+        #result-content pre code {
+            display: block;
+            white-space: pre-wrap; /* <-- ここを修正 */
+            word-wrap: break-word; /* <-- ここを修正 */
+            /* overflow-x: auto; <-- codeタグには不要 */
         }
         .error {
             color: red;
+        }
+        .success {
+            color: green;
         }
     </style>
 </head>
@@ -45,10 +56,12 @@
 
             <div id="sessions-info">
                 <h3 class="text-lg font-semibold text-gray-800 mb-2">現在の認証情報 (Active Session)</h3>
-                 <input type="text" id="filter-sessions" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2" placeholder="MACアドレスでフィルター">
+                 <input type="text" id="filter-sessions" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2" placeholder="MACアドレスでフィルター (リスト表示なし)">
                 <button id="get-sessions-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">Active Sessionを取得</button>
                 <div id="session-count" class="mt-2 text-gray-700"></div>
-                <ul id="session-mac-list" class="list-disc list-inside text-gray-700"></ul>
+                <ul id="session-mac-list" class="list-disc list-inside text-gray-700">
+                    <li>Raw XMLは結果/メッセージボックスに表示されます。</li>
+                </ul>
             </div>
 
             <div id="endpoints-list">
@@ -128,54 +141,89 @@
 
 
         // =====================================================
-        // Active Session一覧を表示する処理
+        // Active Session一覧を表示する処理 (Raw XML表示)
         // =====================================================
         function displaySessions() {
             resultContent.textContent = 'Active Session情報を取得中...';
-            sessionMacList.innerHTML = ''; // リストをクリア
+            resultContent.className = 'text-gray-700'; // メッセージ表示時のスタイル
+            sessionMacList.innerHTML = '<li>Raw XMLは結果/メッセージボックスに表示されます。</li>'; // リストエリアは固定メッセージに
             sessionCountElement.textContent = ''; // セッション数表示をクリア
-            const filter = filterSessionsInput.value.toLowerCase();
+            // const filter = filterSessionsInput.value.toLowerCase(); // フィルターはRaw XML表示には影響させない
+
 
             fetch('/get_sessions')
             .then(response => {
                 if (!response.ok) {
-                    return response.json().then(err => { throw new Error(err.error || `HTTP error! status: ${response.status}`); });
-                }
+                    // エラーレスポンスの場合、JSONとしてパースしてエラーメッセージを取得
+                     // Response BodyがHTMLの場合も考慮し、try-catchでJSONパースエラーを捕捉
+                    return response.json().catch(() => {
+                         // JSONパースに失敗した場合、レスポンスボディ全体をエラーメッセージとする
+                         return response.text().then(text => { throw new Error(`HTTP error! status: ${response.status}, Body: ${text}`); });
+                    }).then(err => {
+                         // JSONとしてパースできた場合は、エラーメッセージを取得
+                        throw new Error(err.error || `HTTP error! status: ${response.status}`);
+                    });
+                 }
+                 // 成功レスポンスの場合、JSONとしてパース
                 return response.json();
             })
             .then(data => {
-                if (data.error) {
-                    sessionMacList.innerHTML = `<li>エラー: ${data.error}</li>`;
-                    resultContent.innerHTML = `<p class="error">エラー: ${data.error}</p>`;
-                     sessionCountElement.textContent = '';
-                } else {
-                    resultContent.textContent = 'Active Session情報取得完了。';
-                    const filteredMacs = data.mac_addresses.filter(mac =>
-                        mac.toLowerCase().includes(filter)
-                    );
-                    sessionMacList.innerHTML = filteredMacs.map(mac => `<li>${mac}</li>`).join('');
-                     sessionCountElement.textContent = `Active Session数: ${data.noOfActiveSession}`;
+                //console.log("Raw data from /get_sessions:", data); // Debug log
 
-                    if (filteredMacs.length === 0 && data.mac_addresses.length > 0) {
-                         sessionMacList.innerHTML = '<li>フィルター条件に一致するセッションはありません。</li>';
-                    } else if (data.mac_addresses.length === 0) {
-                         sessionMacList.innerHTML = '<li>Active Sessionはありません。</li>';
-                    }
+                if (data.error) {
+                    // sessionMacList.innerHTML は固定メッセージのまま
+                    resultContent.innerHTML = `<p class="error">エラー: ${data.error}</p>`;
+                    resultContent.className = 'text-red-600'; // エラー時のスタイル
+                    sessionCountElement.textContent = ''; // エラー時はカウントもクリア
+                } else {
+                    resultContent.textContent = 'Active Session情報取得完了。 Raw XMLを以下に表示します。';
+                    resultContent.className = 'text-green-600'; // 成功時のスタイル
+
+                    sessionCountElement.textContent = `Active Session数: ${data.noOfActiveSession}`;
+
+                    // --- 修正: 結果ボックスにRaw XMLを表示 ---
+                    // Raw XMLは <pre><code> タグで囲んで整形して表示
+                    const preElement = document.createElement('pre');
+                    const codeElement = document.createElement('code');
+                    codeElement.appendChild(document.createTextNode(data.raw_xml));
+                    preElement.appendChild(codeElement);
+                    // 結果エリアの内容を一度クリアしてから追加
+                    resultContent.innerHTML = ''; // Clear previous text like "Active Session情報取得完了..."
+                    resultContent.appendChild(document.createTextNode('Active Session情報取得完了。 Raw XMLを以下に表示します。'));
+                    resultContent.appendChild(preElement);
+
+                    // ------------------------------------
+
+                    // MACアドレスリスト表示エリアは固定メッセージのまま（更新しない）
+                    // sessionMacList.innerHTML = '<li>Raw XMLは結果/メッセージボックスに表示されます。</li>'; // 既に初期設定済み
                 }
             })
             .catch(error => {
                 console.error('Error fetching sessions:', error);
+                 // sessionMacList.innerHTML は固定メッセージのまま
                 resultContent.innerHTML = `<p class="error">Active Session情報の取得に失敗しました: ${error.message || error}</p>`;
-                sessionMacList.innerHTML = `<li>エラー: Active Session情報の取得に失敗しました</li>`;
-                 sessionCountElement.textContent = '';
+                resultContent.className = 'text-red-600'; // エラー時のスタイル
+                 sessionCountElement.textContent = ''; // エラー時はカウントもクリア
             });
         }
+
+        // HTMLエンティティにエスケープするヘルパー関数 (不要になったが念のため残しておく)
+        /*
+        function escapeHTML(str) {
+             if (!str) return ""; // str が null, undefined, 空文字列の場合は空を返す
+             const div = document.createElement('div');
+             div.appendChild(document.createTextNode(str));
+             return div.innerHTML;
+        }
+        */
+
 
         // =====================================================
         // Endpoint一覧 (MAC, Group ID, Group Name) を表示する処理
         // =====================================================
         function displayEndpoints() {
             resultContent.textContent = 'Endpoint一覧を取得中...';
+             resultContent.className = 'text-gray-700'; // メッセージ表示時のスタイル
             endpointsDetailsListUl.innerHTML = ''; // リストをクリア
             const filter = filterEndpointsInput.value.toLowerCase();
 
@@ -183,38 +231,46 @@
             .then(response => {
                  if (!response.ok) {
                     return response.json().then(err => { throw new Error(err.error || `HTTP error! status: ${response.status}`); });
-                }
-                return response.json();
+                 }
+                 return response.json();
             })
             .then(data => {
+                //console.log("Raw data from /get_endpoints:", data); // Debug log
+
                 if (data.error) {
                     endpointsDetailsListUl.innerHTML = `<li>エラー: ${data.error}</li>`;
                     resultContent.innerHTML = `<p class="error">エラー: ${data.error}</p>`;
+                     resultContent.className = 'text-red-600'; // エラー時のスタイル
                 } else {
                     resultContent.textContent = 'Endpoint一覧取得完了。';
+                     resultContent.className = 'text-green-600'; // 成功時のスタイル
+
                      const filteredEndpoints = data.endpoints.filter(endpoint =>
                         endpoint.mac.toLowerCase().includes(filter) ||
                         endpoint.group_id.toLowerCase().includes(filter) ||
                         endpoint.group_name.toLowerCase().includes(filter)
                     );
-                    endpointsDetailsListUl.innerHTML = filteredEndpoints.map(endpoint => `
-                        <li>
-                            MAC: ${endpoint.mac},
-                            Group ID: ${endpoint.group_id},
-                            Group Name: ${endpoint.group_name}
-                        </li>
-                    `).join('');
 
-                    if (filteredEndpoints.length === 0 && data.endpoints.length > 0) {
-                         endpointsDetailsListUl.innerHTML = '<li>フィルター条件に一致するEndpointはありません。</li>';
-                    } else if (data.endpoints.length === 0) {
-                         endpointsDetailsListUl.innerHTML = '<li>登録されているEndpointはありません。</li>';
+                    endpointsDetailsListUl.innerHTML = ''; // リスト表示内容を一旦クリア
+                    if (filteredEndpoints.length === 0) {
+                         // フィルター条件に一致するEndpointがない場合のメッセージ
+                         endpointsDetailsListUl.innerHTML = '<li>条件に一致するEndpointはありません。</li>';
+                    } else {
+                         // フィルター結果に要素がある場合はリストを表示
+                         endpointsDetailsListUl.innerHTML = filteredEndpoints.map(endpoint => `
+                            <li>
+                                MAC: ${endpoint.mac},
+                                Group ID: ${endpoint.group_id},
+                                Group Name: ${endpoint.group_name}
+                            </li>
+                        `).join('');
                     }
                 }
             })
             .catch(error => {
                 console.error('Error fetching endpoints:', error);
                 resultContent.innerHTML = `<p class="error">Endpoint一覧の取得に失敗しました: ${error.message || error}</p>`;
+                resultContent.className = 'text-red-600'; // エラー時のスタイル
                 endpointsDetailsListUl.innerHTML = `<li>エラー: Endpoint一覧の取得に失敗しました</li>`;
             });
         }
@@ -227,18 +283,10 @@
             // MACアドレス入力欄の値を取得
             const macAddress = deleteMacAddressInput.value.trim();
 
-
             if (!macAddress) {
                 alert('削除するMACアドレスを入力してください。');
                 return;
             }
-             // 削除APIではGroup IDは不要になったため、チェックも削除
-             /*
-             if (!endpointGroupId) {
-                alert('削除対象のEndpoint Group IDを入力してください。');
-                return;
-            }
-            */
 
             resultContent.textContent = `MACアドレス ${macAddress} を削除中...`;
             resultContent.className = 'text-gray-700'; // メッセージ表示時のスタイル
@@ -250,7 +298,7 @@
                     'Content-Type': 'application/json'
                 },
                 // 削除APIではGroup IDは不要になったため、MACアドレスのみを送信
-                body: JSON.stringify({ mac_address: macAddress /* , endpoint_group_id: endpointGroupId */ })
+                body: JSON.stringify({ mac_address: macAddress })
             })
             .then(response => {
                  if (!response.ok) {
@@ -360,3 +408,4 @@
     </script>
 </body>
 </html>
+}
