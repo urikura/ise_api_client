@@ -160,10 +160,11 @@ def check_env():
     return jsonify({'exists': env_exists, 'ise_ip': ise_ip_value, 'ise_username':ise_username_value})
 
 
+
 @app.route('/get_sessions')
 def get_sessions():
     """
-    ISEからActive Session一覧を取得し、MACアドレスのリストを返すAPI。
+    ISEからActive Session一覧を取得し、セッション数とRaw XMLを返すAPI。
     XML APIを使用。
     """
     # ヘルパー関数で接続情報を取得
@@ -195,35 +196,20 @@ def get_sessions():
         )
         response.raise_for_status()
         xml_data = response.text  # レスポンスはXML
-        # XMLレスポンス全体をログに出力すると長くなる場合があるので注意
-        # logger.debug(f"Response data (XML): {xml_data}")
 
+        # --- XMLをパースしてセッション数を取得 ---
         root = ET.fromstring(xml_data)
-        mac_addresses = []
-        # activeListにnoOfActiveSession属性があるか確認
         no_of_active_session = root.attrib.get('noOfActiveSession', "N/A")
         logger.debug(f"Number of active sessions: {no_of_active_session}")
+        # ----------------------------------------
 
+        # セッション情報からMACアドレスなども抽出できますが、
+        # 今回は Raw XML 返却がご要望のため、ここではリスト化は必須ではありません。
+        # mac_addresses = []
+        # ... XMLパースしてリスト化するコード ...
 
-        # セッション情報からMACアドレス (calling-station-id) を抽出
-        # セッション情報が存在する場合のみ処理を行う
-        # findallの結果は要素のリスト、findは最初の一致要素
-        if root is not None:
-             session_elements = root.findall(".//session")
-             if session_elements: # セッション要素が存在する場合のみ処理
-                for session_element in session_elements:
-                    mac_address_element = session_element.find('calling-station-id')
-                    mac_address = mac_address_element.text if mac_address_element is not None else 'N/A'
-                    # IPアドレスやSession IDも必要であればここで抽出
-                    # ip_address = session_element.find('Framed-IP-Address').text if session_element.find('Framed-IP-Address') is not None else 'N/A',
-                    # session_id = session_element.find('SessionId').text if session_element.find('SessionId') is not None else 'N/A',
-
-                    if mac_address != 'N/A': # 'N/A'はリストに含めない
-                         mac_addresses.append(mac_address)
-
-        # MACアドレスのリストとセッション数を返す
-        # session_elementsが空の場合も、noOfActiveSessionと空リストを返せるように修正
-        return jsonify({'mac_addresses': mac_addresses, 'noOfActiveSession': no_of_active_session})
+        # セッション数とRaw XMLデータを返す
+        return jsonify({'noOfActiveSession': no_of_active_session, 'raw_xml': xml_data})
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed: {e}")
         error_message = str(e)
@@ -236,6 +222,7 @@ def get_sessions():
     except Exception as e:
         logger.error(f"An unexpected error occurred during get_sessions: {e}")
         return jsonify({'error': f'Active Session取得中に予期しないエラー: {e}'}), 500
+
 
 
 @app.route('/get_endpoints')  # エンドポイント一覧取得API (Group名付き)
